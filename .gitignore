@@ -1,6 +1,35 @@
+# Node
 node_modules/
-lab/.env
+
+# Variáveis de ambiente
+.env
+*.env
+!.env.example
+
+# Ambiente virtual Python
+venv/
+.venv/
+env/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
 *.log
+
+# macOS
 .DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Pastas específicas do projeto
 docs/superpowers/
 .superpowers/
