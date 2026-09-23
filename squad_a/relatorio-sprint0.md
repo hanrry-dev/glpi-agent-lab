@@ -65,3 +65,29 @@ Os chamados (`Assistance/Ticket`) trazem os identificadores, conteúdo em HTML, 
     }
   ]
 }
+```
+
+### Formato de um Artigo (Knowledgebase Article)
+Os artigos (`Knowledgebase/Article`) trazem o título em `name`, o conteúdo em HTML no campo `content` (não `answer`), e a(s) categoria(s) da base de conhecimento como um array em `categories` — relacionamento distinto da categoria de chamado (`Dropdowns/ITILCategory`).
+
+```json
+{
+  "id": 3,
+  "name": "Configurar a VPN corporativa no Windows",
+  "content": "<p>Abra o cliente VPN, informe usuário e senha de rede e selecione o servidor da matriz.</p>",
+  "date_creation": "2024-03-20 12:05:00",
+  "date_mod": "2024-03-20 12:05:00",
+  "categories": [
+    {
+      "id": 2,
+      "name": "Rede e Conectividade"
+    }
+  ],
+  "entity": {
+    "id": 0,
+    "name": "Root entity"
+  },
+  "is_faq": true,
+  "views": 0
+}
+```
