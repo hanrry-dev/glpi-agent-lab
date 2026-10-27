@@ -1,0 +1,1064 @@
+{
+  "info": {
+    "name": "GLPI Agent Lab",
+    "description": "Testes da API v2 do GLPI 11 (lab). Preencha clientId e clientSecret nas variáveis da coleção (lab/oauth-client.md) e rode 'Obter token' primeiro.\n\nAtenção: a pasta 'Escrita' grava de verdade no banco. Para restaurar: docker compose down -v && docker compose up -d --build (dentro de lab/).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "clientId",
+      "value": ""
+    },
+    {
+      "key": "clientSecret",
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": "glpi"
+    },
+    {
+      "key": "password",
+      "value": "glpi"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "ticket_id",
+      "value": "1"
+    },
+    {
+      "key": "article_id",
+      "value": "1"
+    },
+    {
+      "key": "category_id",
+      "value": "1"
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "new_ticket_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Autenticação",
+      "item": [
+        {
+          "name": "Obter token (rode primeiro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/token",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"password\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\",\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"scope\": \"api\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set(\"access_token\", j.access_token);",
+                  "if (j.refresh_token) pm.collectionVariables.set(\"refresh_token\", j.refresh_token);",
+                  "pm.test(\"access_token recebido\", function () { pm.expect(j.access_token).to.be.a(\"string\"); });",
+                  "pm.test(\"expira em 3600s\", function () { pm.expect(j.expires_in).to.eql(3600); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Renovar token (refresh_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/token",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_type\": \"refresh_token\",\n  \"refresh_token\": \"{{refresh_token}}\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Pedir token novo invalida o anterior; o script já atualiza access_token e refresh_token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set(\"access_token\", j.access_token);",
+                  "if (j.refresh_token) pm.collectionVariables.set(\"refresh_token\", j.refresh_token);",
+                  "pm.test(\"access_token recebido\", function () { pm.expect(j.access_token).to.be.a(\"string\"); });",
+                  "pm.test(\"expira em 3600s\", function () { pm.expect(j.expires_in).to.eql(3600); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Sessão e documentação",
+      "item": [
+        {
+          "name": "Quem sou eu (/session)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/session",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "session"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Swagger (doc.json)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/doc.json",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "doc.json"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Tem paths\", function () { pm.expect(pm.response.json().paths).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Chamados (somente leitura)",
+      "item": [
+        {
+          "name": "Listar chamados (start=0, limit=10)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket?start=0&limit=10",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Esperado 206 com Content-Range 0-9/300. Use 'date' (abertura real), nunca date_creation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"206 (parcial) ou 200 (cobre tudo)\", function () { pm.expect([200, 206]).to.include(pm.response.code); });",
+                  "pm.test(\"Header Content-Range presente\", function () { pm.expect(pm.response.headers.has(\"Content-Range\")).to.be.true; });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+                  "pm.test(\"Campos esperados\", function () { const t = pm.response.json()[0]; [\"id\",\"name\",\"status\",\"category\",\"date\"].forEach(k => pm.expect(t).to.have.property(k)); });",
+                  "const cr = pm.response.headers.get(\"Content-Range\"); if (cr) console.log(\"Content-Range:\", cr);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar chamados (segunda página)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket?start=10&limit=10",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "10"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"206 (parcial) ou 200 (cobre tudo)\", function () { pm.expect([200, 206]).to.include(pm.response.code); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar chamados (sem paginar = tudo, 200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+                  "pm.test(\"300 chamados\", function () { pm.expect(pm.response.json().length).to.eql(300); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe do chamado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket/{{ticket_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket",
+                "{{ticket_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Tem date e team\", function () { const t = pm.response.json(); pm.expect(t).to.have.property(\"date\"); pm.expect(t).to.have.property(\"team\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Timeline do chamado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket/{{ticket_id}}/Timeline",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket",
+                "{{ticket_id}}",
+                "Timeline"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+                  "pm.test(\"Itens têm type e item\", function () { pm.response.json().forEach(i => { pm.expect(i).to.have.property(\"type\"); pm.expect(i).to.have.property(\"item\"); }); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtro server-side (deve ser IGNORADO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket?status=1",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "1"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Confirma que não existe filtro no servidor: precisa paginar e filtrar no código."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+                  "pm.test(\"Ainda devolve a coleção inteira\", function () { pm.expect(pm.response.json().length).to.be.above(10); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Base de conhecimento",
+      "item": [
+        {
+          "name": "Listar artigos (start=0, limit=10)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Knowledgebase/Article?start=0&limit=10",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Knowledgebase",
+                "Article"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"206 (parcial) ou 200 (cobre tudo)\", function () { pm.expect([200, 206]).to.include(pm.response.code); });",
+                  "pm.test(\"Header Content-Range presente\", function () { pm.expect(pm.response.headers.has(\"Content-Range\")).to.be.true; });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe do artigo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Knowledgebase/Article/{{article_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Knowledgebase",
+                "Article",
+                "{{article_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Campo content (HTML)\", function () { pm.expect(pm.response.json()).to.have.property(\"content\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categorias de artigos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Knowledgebase/Category",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Knowledgebase",
+                "Category"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Categorias e usuários",
+      "item": [
+        {
+          "name": "Categorias de chamado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Dropdowns/ITILCategory",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Dropdowns",
+                "ITILCategory"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"Corpo é uma lista\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe da categoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Dropdowns/ITILCategory/{{category_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Dropdowns",
+                "ITILCategory",
+                "{{category_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Administration/User",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Administration",
+                "User"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Pode retornar 403 de scope, como aconteceu em /User/Me."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe do usuário",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Administration/User/{{user_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Administration",
+                "User",
+                "{{user_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Escrita (GRAVA NO BANCO)",
+      "item": [
+        {
+          "name": "Criar chamado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Teste do meu agente\",\n  \"content\": \"<p>Chamado criado pelo Postman.</p>\",\n  \"priority\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"201 Created\", function () { pm.response.to.have.status(201); });",
+                  "const j = pm.response.json(); pm.collectionVariables.set(\"new_ticket_id\", j.id); pm.test(\"Retorna id e href\", function () { pm.expect(j).to.have.property(\"id\"); pm.expect(j).to.have.property(\"href\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comentar chamado criado (Followup)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket/{{new_ticket_id}}/Timeline/Followup",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket",
+                "{{new_ticket_id}}",
+                "Timeline",
+                "Followup"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"<p>Acompanhamento adicionado pelo Postman.</p>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+                  "pm.test(\"201 Created\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Atualizar nome do chamado criado (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket/{{new_ticket_id}}",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket",
+                "{{new_ticket_id}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Teste do meu agente (editado)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Em chamado FECHADO retorna 500 genérico: falha esperada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 2xx\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Timeline não aceita POST direto (deve falhar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base}}/api.php/v2/Assistance/Ticket/{{ticket_id}}/Timeline",
+              "host": [
+                "{{base}}"
+              ],
+              "path": [
+                "api.php",
+                "v2",
+                "Assistance",
+                "Ticket",
+                "{{ticket_id}}",
+                "Timeline"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"<p>x</p>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejeitado (não é 2xx)\", function () { pm.expect(pm.response.code).to.not.be.within(200, 299); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

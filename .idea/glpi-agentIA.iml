@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/.venv_dq" />
+      <excludeFolder url="file://$MODULE_DIR$/.venv_old" />
+    </content>
+    <orderEntry type="jdk" jdkName="~\Downloads\Unit-2026.2\Residencia\GLPI-BASE\glpi-agentIA\.venv" jdkType="Python SDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
