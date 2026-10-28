@@ -4,3 +4,7 @@ lab/.env
 .DS_Store
 docs/superpowers/
 .superpowers/
+# Segredos e tokens locais
+backend/.env
+lab/.token-test.json
+backend/glpiloto.db
